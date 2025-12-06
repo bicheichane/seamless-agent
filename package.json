@@ -7,6 +7,16 @@
   "version": "0.0.5",
   "icon": "icon.png",
   "author": "jraylan",
+  "contributors": [
+    {
+      "name": "Bernardo Pinho",
+      "url": "https://github.com/bicheichane"
+    },
+    {
+      "name": "Jefferson Raylan",
+      "url": "https://github.com/jraylan"
+    }
+  ],
   "license": "MIT",
   "main": "./dist/extension.js",
   "engines": {
@@ -36,11 +46,11 @@
   ],
   "contributes": {
     "viewsContainers": {
-      "panel": [
+      "activitybar": [
         {
           "id": "seamless-agent",
           "title": "Seamless Agent",
-          "icon": "$(comment-discussion)"
+          "icon": "resources/seamless-agent.svg"
         }
       ]
     },
@@ -49,7 +59,8 @@
         {
           "id": "seamlessAgentView",
           "name": "Seamless Agent",
-          "type": "webview"
+          "type": "webview",
+          "icon": "resources/seamless-agent.svg"
         }
       ]
     },
