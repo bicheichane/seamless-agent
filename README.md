@@ -97,6 +97,12 @@ None at this time. Please report issues on [GitHub](https://github.com/jraylan/s
 
 ## Release Notes
 
+## 0.1.6
+
+### Fixed
+- **Antigravity**: Fixed antigravity integration
+
+
 ## 0.1.5
 
 ### Added

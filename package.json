@@ -37,7 +37,7 @@
     "type": "git",
     "url": "git+https://github.com/jraylan/seamless-agent.git"
   },
-  "homepage": "https://github.com/jraylan/seamless-agent#readme",
+  "homepage": "https://github.com/jraylan/seamless-agent/tree/antigravity/#readme",
   "keywords": [
     "mcp",
     "model-context-protocol",
