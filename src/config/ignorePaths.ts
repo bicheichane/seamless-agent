@@ -45,7 +45,6 @@ export const DEFAULT_IGNORED_SOURCE_GLOBS = [
     "**/vendor/**",
 
     // PHP / Composer
-    "**/vendor/**",
 
     // Ruby
     "**/.bundle/**",
