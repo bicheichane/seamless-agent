@@ -38,11 +38,6 @@ jobs:
         run: npm run package:ovsx
 
       - name: Publish to Open VSX
-        run: npx ovsx publish seamless-agent-*-antigravity.vsix
-        env:
-          OVSX_PAT: ${{ secrets.OVSX_TOKEN }}
-
-      - name: Publish to Open VSX
         if: ${{ !inputs.pre-release }}
         run: npx ovsx publish seamless-agent-*-antigravity.vsix
         env:
