@@ -48,7 +48,7 @@ jobs:
         run: npm run package:vsce
 
       - name: Publish to VS Code Marketplace
-        run: vsce publish -p ${{ secrets.VSCE_TOKEN }} seamless-agent-${{ needs.release-please.outputs.version }}-antigravity.vsix
+        run: vsce publish -p ${{ secrets.VSCE_TOKEN }} seamless-agent-${{ needs.release-please.outputs.version }}.vsix
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
 
