@@ -140,7 +140,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
         }
 
         // Generate unique ID for this request
-        const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
         return new Promise<UserResponseResult>((resolve) => {
             const item: RequestItem = {
@@ -338,7 +338,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 const labelMatch = item.label.match(/\$\([^)]+\)\s*(.+)/);
                 const cleanName = labelMatch ? labelMatch[1] : item.label;
                 const attachment: AttachmentInfo = {
-                    id: `att_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
                     name: cleanName,
                     uri: uri.toString()
                 };
@@ -376,10 +376,13 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
      */
     private async _handleSearchFiles(query: string): Promise<void> {
         try {
+            // Sanitize query - remove path traversal patterns and limit length
+            const sanitizedQuery = this._sanitizeSearchQuery(query);
+
             // Fetch all workspace files first, then filter case-insensitively
             // This ensures queries like 'readme' match 'README.md'
             const allFiles = await vscode.workspace.findFiles('**/*', '**/node_modules/**', 2000);
-            const queryLower = (query || '').toLowerCase();
+            const queryLower = sanitizedQuery.toLowerCase();
 
             const results: FileSearchResult[] = allFiles
                 .map(uri => {
@@ -438,7 +441,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
 
         // Create attachment from file reference
         const attachment: AttachmentInfo = {
-            id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            id: `file_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
             name: file.name,
             uri: file.uri
         };
@@ -461,16 +464,34 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
         const pending = this._pendingRequests.get(requestId);
         if (!pending) return;
 
+        // Maximum allowed image size (10MB)
+        const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
+
         try {
             // Extract base64 data from data URL
             const base64Match = dataUrl.match(/^data:[^;]+;base64,(.+)$/);
             if (!base64Match) {
                 console.error('Invalid data URL format');
+                vscode.window.showWarningMessage('Invalid image format: could not parse data URL');
                 return;
             }
 
             const base64Data = base64Match[1];
             const buffer = Buffer.from(base64Data, 'base64');
+
+            // Validate image size
+            if (buffer.length > MAX_IMAGE_SIZE_BYTES) {
+                const sizeMB = (buffer.length / (1024 * 1024)).toFixed(2);
+                vscode.window.showWarningMessage(`Image too large (${sizeMB}MB). Maximum allowed size is 10MB.`);
+                return;
+            }
+
+            // Validate MIME type is a known image type
+            const validMimeTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/bmp', 'image/svg+xml'];
+            if (!validMimeTypes.includes(mimeType)) {
+                vscode.window.showWarningMessage(`Unsupported image type: ${mimeType}`);
+                return;
+            }
 
             // Determine file extension from MIME type
             const extMap: Record<string, string> = {
@@ -547,7 +568,8 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
 
         } catch (error) {
             console.error('Failed to save image:', error);
-            vscode.window.showErrorMessage('Failed to save pasted image');
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            vscode.window.showErrorMessage(`Failed to save pasted image: ${errorMessage}`);
         }
     }
 
@@ -580,7 +602,10 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
      * Delay cleanup to allow LLM to read the files first
      */
     private _cleanupTempAttachments(attachments: AttachmentInfo[]): void {
-        // Delay cleanup by 30 seconds to allow LLM to read the image data
+        // Delay cleanup by 60 seconds to allow LLM adequate time to read the image data
+        // This provides a safer margin than 30 seconds for larger images or slow models
+        const cleanupDelay = 60000; // 60 seconds
+
         setTimeout(() => {
             for (const att of attachments) {
                 if (att.isTemporary && att.uri) {
@@ -588,13 +613,46 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                         const filePath = vscode.Uri.parse(att.uri).fsPath;
                         if (fs.existsSync(filePath)) {
                             fs.unlinkSync(filePath);
+                            console.log(`Cleaned up temp attachment: ${filePath}`);
                         }
                     } catch (error) {
                         console.error('Failed to cleanup temp attachment:', error);
                     }
                 }
             }
-        }, 30000); // 30 second delay
+        }, cleanupDelay);
+    }
+
+    /**
+     * Cleanup all temp files in the .seamless-agent directory
+     * Called during extension deactivation to prevent orphaned files
+     */
+    public cleanupAllTempFiles(): void {
+        try {
+            const workspaceFolders = vscode.workspace.workspaceFolders;
+            if (workspaceFolders && workspaceFolders.length > 0) {
+                const tempDir = path.join(workspaceFolders[0].uri.fsPath, '.seamless-agent');
+                if (fs.existsSync(tempDir)) {
+                    const files = fs.readdirSync(tempDir);
+                    for (const file of files) {
+                        try {
+                            const filePath = path.join(tempDir, file);
+                            fs.unlinkSync(filePath);
+                            console.log(`Cleaned up orphaned temp file: ${filePath}`);
+                        } catch (err) {
+                            console.error(`Failed to clean up ${file}:`, err);
+                        }
+                    }
+                    // Remove the directory if empty
+                    const remainingFiles = fs.readdirSync(tempDir);
+                    if (remainingFiles.length === 0) {
+                        fs.rmdirSync(tempDir);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to cleanup temp directory:', error);
+        }
     }
 
     /**
@@ -694,6 +752,28 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             text += possible.charAt(Math.floor(Math.random() * possible.length));
         }
         return text;
+    }
+
+    /**
+     * Sanitize search query to prevent potential security issues
+     * Removes path traversal patterns and limits query length
+     */
+    private _sanitizeSearchQuery(query: string): string {
+        if (!query) return '';
+
+        // Limit query length to prevent abuse
+        const maxQueryLength = 100;
+        let sanitized = query.slice(0, maxQueryLength);
+
+        // Remove path traversal patterns
+        sanitized = sanitized.replace(/\.\.\//g, '');
+        sanitized = sanitized.replace(/\.\.\\/g, '');
+        sanitized = sanitized.replace(/\.\.$/g, '');
+
+        // Remove null bytes and other potentially dangerous characters
+        sanitized = sanitized.replace(/[\x00-\x1f]/g, '');
+
+        return sanitized.trim();
     }
 
     /**

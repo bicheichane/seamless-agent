@@ -1,5 +1,13 @@
 /* Agent Console Webview Styles */
 
+/* CSS Custom Properties for theming and maintenance */
+:root {
+    --autocomplete-dropdown-max-height: 250px;
+    --autocomplete-list-max-height: 200px;
+    --textarea-max-height: 200px;
+    --chip-max-width: 200px;
+}
+
 html,
 body {
     height: 100%;
@@ -425,7 +433,7 @@ button:disabled {
 .autocomplete-dropdown {
     position: relative;
     width: 100%;
-    max-height: 250px;
+    max-height: var(--autocomplete-dropdown-max-height);
     background-color: var(--vscode-editorWidget-background);
     border: 1px solid var(--vscode-editorWidget-border, var(--vscode-widget-border));
     border-radius: 6px;
@@ -455,7 +463,7 @@ button:disabled {
 
 .autocomplete-list {
     overflow-y: auto;
-    max-height: 200px;
+    max-height: var(--autocomplete-list-max-height);
 }
 
 .autocomplete-list::-webkit-scrollbar {
@@ -614,7 +622,7 @@ button:disabled {
 .input-area .textarea-wrapper textarea {
     width: 100%;
     min-height: auto !important;
-    max-height: 200px !important;
+    max-height: var(--textarea-max-height) !important;
     height: auto;
     padding: 8px 12px 8px 0;
     border: none !important;
@@ -624,14 +632,19 @@ button:disabled {
     font-size: var(--vscode-font-size);
     line-height: 1.4;
     resize: none;
-    outline: none !important;
+    /* Focus is handled by parent .input-container:focus-within */
+    outline: 2px solid transparent;
+    /* Keeps a11y compliance while visually hidden */
     box-sizing: border-box;
     overflow: hidden;
     /* Height controlled dynamically by JS */
 }
 
 .input-area .textarea-wrapper textarea:focus {
-    outline: none !important;
+    /* Parent .input-container shows focus border via :focus-within */
+    outline: 2px solid transparent;
+    /* a11y: outline present but transparent */
+    outline-offset: -2px;
     border: none !important;
 }
 
@@ -648,7 +661,7 @@ button:disabled {
     color: var(--vscode-badge-foreground);
     border-radius: 12px;
     font-size: 0.85em;
-    max-width: 200px;
+    max-width: var(--chip-max-width);
 }
 
 .chip-icon {

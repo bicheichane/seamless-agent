@@ -671,7 +671,7 @@ interface FileSearchResult {
      */
     function addFileAttachment(file: FileSearchResult, isTextReference: boolean = false): void {
         const attachment: AttachmentInfo = {
-            id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+            id: `file_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
             name: file.name,
             uri: file.uri,
             isImage: /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(file.name),
