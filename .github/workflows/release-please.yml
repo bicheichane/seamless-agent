@@ -22,7 +22,7 @@ jobs:
                   release-type: node
                   token: ${{ secrets.GITHUB_TOKEN }}
 
-    publish-vscode:
+    publish:
         needs: release-please
         if: ${{ needs.release-please.outputs.release_created }}
         runs-on: ubuntu-latest
