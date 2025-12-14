@@ -17,6 +17,8 @@ A Language Model tool that enables Copilot to interactively prompt you for confi
 - **Interactive Input** — Provide additional context or instructions mid-conversation
 - **Task Validation** — Confirm whether a task was fulfilled your specs
 - **Seamless Integration** — Works naturally within the Copilot Chat workflow
+- **Paste Images** — Paste images directly into the input area for context
+- **References & Attachments** — Reference files in your workspace using `#filename` and attach files to your response
 
 ## Usage
 

@@ -6,6 +6,7 @@
     --autocomplete-list-max-height: 200px;
     --textarea-max-height: 200px;
     --chip-max-width: 200px;
+    --chips-container-max-height: 120px;
 }
 
 html,
@@ -577,6 +578,28 @@ button:disabled {
     padding: 8px 10px;
     background-color: var(--vscode-editor-background);
     border-bottom: 1px solid var(--vscode-input-border);
+    /* Fix: Limit height and enable scrolling when many attachments are added */
+    max-height: var(--chips-container-max-height);
+    overflow-y: auto;
+}
+
+/* Monaco-style scrollbar for chips container */
+.chips-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.chips-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chips-container::-webkit-scrollbar-thumb {
+    background-color: var(--vscode-scrollbarSlider-background);
+    border-radius: 4px;
+}
+
+.chips-container::-webkit-scrollbar-thumb:hover {
+    background-color: var(--vscode-scrollbarSlider-hoverBackground);
 }
 
 .chips-container:empty,
