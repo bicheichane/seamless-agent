@@ -3,12 +3,8 @@ name: Manual Publish
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Version to publish (leave empty to use current version from package.json)"
-        required: false
-        type: string
-      dry-run:
-        description: "Perform a dry run (do not actually publish)"
+      pre-release:
+        description: "Pre release"
         required: false
         type: boolean
         default: false
@@ -41,7 +37,17 @@ jobs:
       - name: Pack for Vscode
         run: npm run package:vsce
 
+      - name: Pack for Vscode
+        run: npm run package:vsce
+
       - name: Publish to VS Code Marketplace
+        if: ${{ !inputs.pre-release }}
         run: vsce publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_TOKEN }}
+
+      - name: Publish to VS Code Marketplace
+        if: ${{ inputs.pre-release }}
+        run: vsce publish --pre-release
         env:
           VSCE_PAT: ${{ secrets.VSCE_TOKEN }}

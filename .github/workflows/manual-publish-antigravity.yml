@@ -3,12 +3,8 @@ name: Manual Publish
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Version to publish (leave empty to use current version from package.json)"
-        required: false
-        type: string
-      dry-run:
-        description: "Perform a dry run (do not actually publish)"
+      pre-release:
+        description: "Pre release"
         required: false
         type: boolean
         default: false
@@ -43,5 +39,17 @@ jobs:
 
       - name: Publish to Open VSX
         run: npx ovsx publish seamless-agent-*-antigravity.vsix
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_TOKEN }}
+
+      - name: Publish to Open VSX
+        if: ${{ !inputs.pre-release }}
+        run: npx ovsx publish seamless-agent-*-antigravity.vsix
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_TOKEN }}
+
+      - name: Publish to Open VSX
+        if: ${{ inputs.pre-release }}
+        run: npx ovsx publish --pre-release seamless-agent-*-antigravity.vsix
         env:
           OVSX_PAT: ${{ secrets.OVSX_TOKEN }}
