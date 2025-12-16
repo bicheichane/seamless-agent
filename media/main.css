@@ -1394,6 +1394,23 @@ button:disabled {
     font-style: italic;
 }
 
+.detail-content pre {
+    background-color: var(--vscode-textCodeBlock-background);
+    padding: 12px;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.detail-content pre code {
+    white-space: pre;
+    word-wrap: normal;
+    overflow-wrap: normal;
+    background: none !important;
+    padding: 0;
+    border-radius: 0;
+}
+
+
 .detail-attachments {
     display: flex;
     flex-wrap: wrap;
