@@ -43,9 +43,7 @@ const md = new MarkdownIt({
             try {
                 return hljs.highlight(str, {
                     language: lang, ignoreIllegals: true
-                }
-
-                ).value;
+                }).value;
             }
 
             catch (_) {
@@ -64,9 +62,7 @@ const md = new MarkdownIt({
 
         return ''; // Use external default escaping
     }
-}
-
-);
+});
 
 /**
  * Render markdown content to HTML
@@ -183,9 +179,7 @@ import type {
             const isActive = btnTab === tab;
             btn.classList.toggle('active', isActive);
             btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        }
-
-        );
+        });
     }
 
     function formatBadgeCount(count: number): string {
@@ -217,9 +211,7 @@ import type {
             }
 
             (${count
-            }
-
-            )` : base;
+            })` : base;
         btn.setAttribute('title', withCount);
         btn.setAttribute('aria-label', withCount);
     }
@@ -246,24 +238,16 @@ import type {
             btn.addEventListener('click', () => {
                 const tab = (btn.getAttribute('data-tab') || 'pending') as HomeTab;
                 switchTab(tab);
-            }
-
-            );
-        }
-
-        );
+            });
+        });
 
         const clearBtn = document.querySelector('.home-toolbar-btn[data-action="clearHistory"]') as HTMLElement | null;
 
         clearBtn?.addEventListener('click', () => {
             vscode.postMessage({
                 type: 'clearHistory'
-            }
-
-            );
-        }
-
-        );
+            });
+        });
     }
 
     /**
@@ -275,9 +259,7 @@ import type {
         // Update button active states
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-filter') === filter);
-        }
-
-        );
+        });
 
         // Show/hide history items based on filter
         if (historyList) {
@@ -298,9 +280,7 @@ import type {
                 }
 
                 (item as HTMLElement).style.display = show ? '' : 'none';
-            }
-
-            );
+            });
         }
     }
 
@@ -312,12 +292,8 @@ import type {
             btn.addEventListener('click', () => {
                 const filter = btn.getAttribute('data-filter') || 'all';
                 applyHistoryFilter(filter);
-            }
-
-            );
-        }
-
-        );
+            });
+        });
     }
 
     /**
@@ -340,9 +316,7 @@ import type {
 
                 vscode.postMessage({
                     type: 'deleteInteraction', interactionId: id
-                }
-
-                );
+                });
 
                 return;
             }
@@ -357,21 +331,15 @@ import type {
             if (type === 'plan_review') {
                 vscode.postMessage({
                     type: 'openPlanReviewPanel', interactionId: id
-                }
-
-                );
+                });
             }
 
             else {
                 vscode.postMessage({
                     type: 'selectInteraction', interactionId: id
-                }
-
-                );
+                });
             }
-        }
-
-        );
+        });
 
         historyList.addEventListener('keydown', (e: Event) => {
             const keyEvent = e as KeyboardEvent;
@@ -383,9 +351,7 @@ import type {
 
             keyEvent.preventDefault();
             (item as HTMLElement).click();
-        }
-
-        );
+        });
     }
 
     /**
@@ -450,6 +416,9 @@ import type {
             html?: string;
             title?: string;
             attrs?: Record<string, string>;
+            on?: Partial<{
+                [K in keyof HTMLElementEventMap]?: (ev: HTMLElementEventMap[K]) => any;
+            }>
         },
         ...children: ElementChild[]
     ): HTMLElementTagNameMap[K] {
@@ -462,6 +431,12 @@ import type {
         if (options?.attrs) {
             for (const [key, value] of Object.entries(options.attrs)) {
                 node.setAttribute(key, value);
+            }
+        }
+
+        if (options?.on) {
+            for (const [event, handler] of Object.entries(options.on)) {
+                node.addEventListener(event, handler as EventListener);
             }
         }
 
@@ -849,9 +824,7 @@ import type {
                 title,
                 preview,
                 status: interaction.status
-            }
-
-            );
+            });
         }
 
         // Sort newest first, regardless of type
@@ -1008,9 +981,7 @@ import type {
                 // For plan_review, redirect to panel
                 vscode.postMessage({
                     type: 'openPlanReviewPanel', interactionId: interaction.id
-                }
-
-                );
+                });
             }
         }
     }
@@ -1050,6 +1021,11 @@ import type {
         else {
             chipsContainer.classList.remove('hidden');
 
+
+            const preview = document.querySelector('.image-hover-preview') as HTMLElement;
+            const previewImg = preview?.querySelector('img') as HTMLImageElement;
+
+            preview.classList.add('hidden');
             chipsContainer.replaceChildren(...currentAttachments.map(att => {
                 const isImage = att.isImage || /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(att.name);
                 const isFolder = att.isFolder;
@@ -1078,8 +1054,28 @@ import type {
                     chipClass = 'chip';
                 }
 
-                return el(
-                    'div', { className: chipClass, title: att.folderPath || att.uri || att.name, attrs: { 'data-id': att.id } },
+                const element = el(
+                    'div',
+                    {
+                        className: chipClass,
+                        title: att.folderPath || att.uri || att.name,
+                        attrs: { 'data-id': att.id },
+                        on: {
+                            'mouseenter': async () => {
+                                previewImg.setAttribute('src', att?.thumbnail || att.uri);
+                                previewImg.setAttribute('alt', att.name);
+
+                                const rect = element.getBoundingClientRect();
+                                const previewRect = preview.getBoundingClientRect();
+                                const top = rect.top - previewRect.height - 8
+                                preview.style.top = `${top}px`;
+                                preview.classList.remove('hidden');
+                            },
+                            'mouseleave': () => {
+                                preview.classList.add('hidden');
+                            }
+                        }
+                    },
                     el('span', { className: 'chip-icon' },
                         el('span', { className: `codicon codicon-${iconClass}` })
                     ),
@@ -1089,25 +1085,21 @@ import type {
                         {
                             className: 'chip-remove',
                             title: window.__STRINGS__?.remove || 'Remove',
-                            attrs: { type: 'button', 'data-remove': att.id }
+                            attrs: { type: 'button', 'data-remove': att.id },
+                            on: {
+                                'click': (e) => {
+                                    e.stopPropagation();
+                                    removeAttachment(att.id);
+                                    preview.classList.add('hidden');
+                                }
+                            }
                         },
                         el('span', { className: 'codicon codicon-close' })
                     )
                 );
-            }
-            ));
 
-            // Bind remove buttons
-            chipsContainer.querySelectorAll('.chip-remove').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const attId = (btn as HTMLElement).getAttribute('data-remove');
-
-                    if (attId) {
-                        removeAttachment(attId);
-                    }
-                });
-            });
+                return element
+            }));
         }
     }
 
@@ -1120,9 +1112,7 @@ import type {
                 type: 'removeAttachment',
                 requestId: currentRequestId,
                 attachmentId: attachmentId
-            }
-
-            );
+            });
         }
 
         // Optimistically update local state
@@ -1142,9 +1132,7 @@ import type {
                 response: response,
                 requestId: currentRequestId,
                 attachments: currentAttachments
-            }
-
-            );
+            });
         }
 
         currentAttachments = [];
@@ -1159,9 +1147,7 @@ import type {
             vscode.postMessage({
                 type: 'cancel',
                 requestId: currentRequestId
-            }
-
-            );
+            });
         }
 
         currentAttachments = [];
@@ -1177,9 +1163,7 @@ import type {
         if (currentInteractionId) {
             vscode.postMessage({
                 type: 'backToHome'
-            }
-
-            );
+            });
         }
 
         else {
@@ -1187,9 +1171,7 @@ import type {
             // Go back to list or home
             vscode.postMessage({
                 type: 'backToList'
-            }
-
-            );
+            });
         }
     }
 
@@ -1370,20 +1352,13 @@ import type {
             item.addEventListener('click', () => {
                 const index = parseInt((item as HTMLElement).getAttribute('data-index') || '0', 10);
                 selectAutocompleteItem(index);
-            }
-
-            );
-
+            });
             item.addEventListener('mouseenter', () => {
                 const index = parseInt((item as HTMLElement).getAttribute('data-index') || '0', 10);
                 selectedAutocompleteIndex = index;
                 updateAutocompleteSelection();
-            }
-
-            );
-        }
-
-        );
+            });
+        });
 
         scrollToSelectedItem();
     }
@@ -1402,9 +1377,7 @@ import type {
             else {
                 item.classList.remove('selected');
             }
-        }
-
-        );
+        });
 
         scrollToSelectedItem();
     }
@@ -1420,9 +1393,7 @@ import type {
         if (selectedItem) {
             selectedItem.scrollIntoView({
                 block: 'nearest', behavior: 'smooth'
-            }
-
-            );
+            });
         }
     }
 
@@ -1440,10 +1411,7 @@ import type {
         const cursorPos = responseInput.selectionStart;
 
         // Build the reference text in format #filename
-        const referenceText = `#${file.name
-            }
-
-        `;
+        const referenceText = `#${file.name}`;
 
         // Replace from # position to current cursor with the reference
         const beforeHash = value.substring(0, autocompleteStartPos);
@@ -1501,9 +1469,7 @@ import type {
                 type: 'addFileReference',
                 requestId: currentRequestId,
                 file: file
-            }
-
-            );
+            });
         }
     }
 
@@ -1580,12 +1546,8 @@ import type {
                 vscode.postMessage({
                     type: 'searchFiles',
                     query: query
-                }
-
-                );
-            }
-
-                , 150);
+                });
+            }, 150);
         }
 
         else {
@@ -1625,17 +1587,13 @@ import type {
             if (!text.includes(reference)) {
                 toRemove.push(att.id);
             }
-        }
-
-        );
+        });
 
         // Remove attachments that no longer have text references
         if (toRemove.length > 0) {
             toRemove.forEach(id => {
                 removeAttachment(id);
-            }
-
-            );
+            });
         }
     }
 
@@ -1777,13 +1735,9 @@ import type {
         if (currentRequestId) {
             vscode.postMessage({
                 type: 'addAttachment', requestId: currentRequestId
-            }
-
-            );
+            });
         }
-    }
-
-    );
+    });
 
     // Textarea input handler for # autocomplete trigger
     responseInput?.addEventListener('input', handleTextareaInput);
@@ -1811,29 +1765,25 @@ import type {
         if (autocompleteVisible) {
             switch (event.key) {
                 case 'ArrowDown': event.preventDefault();
-
                     if (selectedAutocompleteIndex < autocompleteResults.length - 1) {
                         selectedAutocompleteIndex++;
                         updateAutocompleteSelection();
                     }
-
                     return;
                 case 'ArrowUp': event.preventDefault();
-
                     if (selectedAutocompleteIndex > 0) {
                         selectedAutocompleteIndex--;
                         updateAutocompleteSelection();
                     }
-
                     return;
-
-                case 'Enter': case 'Tab': if (selectedAutocompleteIndex >= 0) {
+                case 'Enter': case 'Tab':
+                    if (selectedAutocompleteIndex >= 0) {
+                        event.preventDefault();
+                        selectAutocompleteItem(selectedAutocompleteIndex);
+                    }
+                    return;
+                case 'Escape':
                     event.preventDefault();
-                    selectAutocompleteItem(selectedAutocompleteIndex);
-                }
-
-                    return;
-                case 'Escape': event.preventDefault();
                     hideAutocomplete();
                     return;
             }
@@ -1853,30 +1803,6 @@ import type {
     });
 
 
-    const preview = async () => document.querySelector('.image-hover-preview') as HTMLElement || null;
-
-    document.addEventListener('mouseover', async (event: MouseEvent) => {
-        const target = (event.target as HTMLElement).closest('.chip-image') as HTMLElement | null;
-        const prev = await preview();
-        if (target) {
-            const attach = currentAttachments.find(a => a.id === target.getAttribute('data-id'));
-
-            if (!attach?.thumbnail) return;
-
-            const previewImg = prev?.querySelector('img') as HTMLImageElement || null;
-
-            previewImg.setAttribute('src', attach.thumbnail);
-            previewImg.setAttribute('alt', attach.name);
-
-            const rect = target.getBoundingClientRect();
-            const previewRect = prev.getBoundingClientRect();
-            const top = rect.top - previewRect.height - 8
-            prev.style.top = `${top}px`;
-            prev?.classList.remove('hidden');
-        } else {
-            prev?.classList.add('hidden');
-        }
-    });
 
 
     // Listen for messages from the Extension Host
@@ -1919,9 +1845,7 @@ import type {
                 // Preserve flags from existing attachments when updating
                 const existingFlags = new Map(currentAttachments.map(a => [a.id, {
                     isImage: a.isImage, isTextReference: a.isTextReference
-                }
-
-                ]));
+                }]));
 
                 currentAttachments = (message.attachments || []).map((att: AttachmentInfo) => {
                     const existing = existingFlags.get(att.id);
@@ -1930,9 +1854,7 @@ import type {
                         isImage: att.isImage || existing?.isImage || /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(att.name),
                         isTextReference: att.isTextReference ?? existing?.isTextReference ?? false,
                     };
-                }
-
-                );
+                });
                 updateAttachmentsDisplay();
             }
 
@@ -1978,9 +1900,7 @@ import type {
     // Initialize delegated handler for history list clicks/keys
     initHistoryListDelegation();
 
-}
-
-)();
+})();
 
 // Type declaration for VS Code API
 declare function acquireVsCodeApi(): {

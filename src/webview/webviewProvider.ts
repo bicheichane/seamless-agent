@@ -177,9 +177,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             if (!this._view?.visible) {
                 this._showNotification();
             }
-        }
-
-        );
+        });
     }
 
     /**
@@ -192,9 +190,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
 
         pending.resolve({
             responded: false, response: reason, attachments: []
-        }
-
-        );
+        });
         this._pendingRequests.delete(requestId);
         this._setBadge(this._pendingRequests.size);
 
@@ -206,9 +202,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
         else {
             this._view?.webview.postMessage({
                 type: 'clear'
-            }
-
-            );
+            });
             this._selectedRequestId = null;
         }
 
@@ -223,9 +217,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
         for (const [id, pending] of this._pendingRequests) {
             pending.resolve({
                 responded: false, response: reason, attachments: []
-            }
-
-            );
+            });
         }
 
         this._pendingRequests.clear();
@@ -233,9 +225,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
 
         this._view?.webview.postMessage({
             type: 'clear'
-        }
-
-        );
+        });
         this._selectedRequestId = null;
     }
 
@@ -343,18 +333,14 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 responded: true,
                 response: message.response,
                 attachments: message.attachments || []
-            }
-
-            );
+            });
                 break;
 
             case 'cancel': this._resolveRequest(message.requestId, {
                 responded: false,
                 response: '',
                 attachments: []
-            }
-
-            );
+            });
                 break;
             case 'selectRequest': this._selectedRequestId = message.requestId;
                 const pending = this._pendingRequests.get(message.requestId);
@@ -453,9 +439,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             placeHolder: strings.addAttachment,
             matchOnDescription: true,
             matchOnDetail: true
-        }
-
-        );
+        });
 
         if (selected && selected.length > 0) {
             for (const item of selected) {
@@ -477,9 +461,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 type: 'updateAttachments',
                 requestId,
                 attachments: pending.item.attachments
-            }
-
-            );
+            });
         }
     }
 
@@ -497,9 +479,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             type: 'updateAttachments',
             requestId,
             attachments: pending.item.attachments
-        }
-
-        );
+        });
     }
 
     /**
@@ -531,9 +511,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 description: folder.uri.fsPath,
                 iconPath: folder.uri,
                 uri: folder.uri
-            }
-
-            );
+            });
         }
 
         // Find subdirectories
@@ -560,9 +538,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                             description: relativePath,
                             iconPath: vscode.Uri.file(dirPath),
                             uri: vscode.Uri.file(dirPath)
-                        }
-
-                        );
+                        });
                     }
                 }
             }
@@ -579,33 +555,29 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
         const selectedFolder = await vscode.window.showQuickPick(folderItems, {
             placeHolder: strings.attachmentSelectFolder,
             matchOnDescription: true
-        }
-
-        );
+        });
 
         if (!selectedFolder) return;
 
         // Ask for folder depth
         const depthOptions = [
             {
-                label: strings.attachmentFolderDepthCurrent, depth: 0
+                label: strings.attachmentFolderDepthCurrent, depth: 0,
             },
             {
-                label: strings.attachmentFolderDepth1, depth: 1
+                label: strings.attachmentFolderDepth1, depth: 1,
             },
             {
-                label: strings.attachmentFolderDepth2, depth: 2
+                label: strings.attachmentFolderDepth2, depth: 2,
             },
             {
-                label: strings.attachmentFolderDepthRecursive, depth: -1
+                label: strings.attachmentFolderDepthRecursive, depth: -1,
             }
         ];
 
         const selectedDepth = await vscode.window.showQuickPick(depthOptions, {
             placeHolder: strings.attachmentSelectFolderDepth
-        }
-
-        );
+        });
 
         if (!selectedDepth) return;
 
@@ -630,9 +602,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             type: 'updateAttachments',
             requestId,
             attachments: pending.item.attachments
-        }
-
-        );
+        });
     }
 
     /**
@@ -723,9 +693,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             this._view?.webview.postMessage({
                 type: 'fileSearchResults',
                 files: allResults
-            }
-
-            );
+            });
         }
 
         catch (error) {
@@ -734,9 +702,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             this._view?.webview.postMessage({
                 type: 'fileSearchResults',
                 files: []
-            }
-
-            );
+            });
         }
     }
 
@@ -769,9 +735,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             type: 'updateAttachments',
             requestId,
             attachments: pending.item.attachments
-        }
-
-        );
+        });
     }
 
     /**
@@ -871,9 +835,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             if (!fs.existsSync(tempDir)) {
                 fs.mkdirSync(tempDir, {
                     recursive: true
-                }
-
-                );
+                });
             }
 
             // Generate simple incremental filename: image-pasted.png, image-pasted-1.png, etc.
@@ -921,18 +883,14 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 type: 'imageSaved',
                 requestId,
                 attachment
-            }
-
-            );
+            });
 
             // Also send updated attachments list
             this._view?.webview.postMessage({
                 type: 'updateAttachments',
                 requestId,
                 attachments: pending.item.attachments
-            }
-
-            );
+            });
 
         }
 
@@ -1116,9 +1074,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 if (selection === strings.openConsole) {
                     vscode.commands.executeCommand('seamlessAgentView.focus');
                 }
-            }
-
-            );
+            });
     }
 
     // ========================
