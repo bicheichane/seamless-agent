@@ -1229,7 +1229,7 @@ import { truncate } from './utils';
 
                 const attachmentsHtml = (interaction.attachments && interaction.attachments.length > 0)
                     ? (() => (
-                        el('div', { className: 'detail-section' },
+                        el('div', { className: 'detail-section detail-section-plain' },
                             el('div', { className: 'detail-label' },
                                 el('span', { className: 'codicon codicon-file' }),
                                 attachmentsLabel
@@ -1243,14 +1243,14 @@ import { truncate } from './utils';
                     ))() : tn('');
 
                 detailContent.replaceChildren(
-                    el('div', { className: 'detail-section' },
+                    el('div', { className: 'detail-section detail-section-plain' },
                         el('div', { className: 'detail-label' },
                             el('span', { className: 'codicon codicon-question' }),
                             questionLabel
                         ),
                         el('div', { className: 'detail-content markdown-content', html: renderMarkdown(interaction.question || '') })
                     ),
-                    el('div', { className: 'detail-section' },
+                    el('div', { className: 'detail-section detail-section-plain' },
                         el('div', { className: 'detail-label' },
                             el('span', { className: 'codicon codicon-reply' }),
                             responseLabel

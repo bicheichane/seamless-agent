@@ -1406,6 +1406,12 @@ button:disabled {
     min-height: 5.4em;
 }
 
+.detail-section.detail-section-plain {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+}
+
 .detail-label {
     display: flex;
     align-items: center;
