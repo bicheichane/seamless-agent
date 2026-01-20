@@ -174,6 +174,7 @@ import { truncate } from './utils';
     let currentRequestId: string | null = null;
     let currentAttachments: AttachmentInfo[] = [];
     let currentInteractionId: string | null = null;
+    const draftResponses = new Map<string, string>();
 
     // Autocomplete state
     let autocompleteVisible = false;
@@ -711,6 +712,13 @@ import { truncate } from './utils';
     * Show the list of pending requests
     */
     function showList(requests: RequestItem[]): void {
+        const activeRequestIds = new Set(requests.map(req => req.id));
+        for (const id of draftResponses.keys()) {
+            if (!activeRequestIds.has(id)) {
+                draftResponses.delete(id);
+            }
+        }
+
         if (requests.length === 0) {
 
             // No pending requests - clear list and update placeholder
@@ -776,6 +784,10 @@ import { truncate } from './utils';
 * Show the question form and hide other views
 */
     function showQuestion(question: string, title: string, requestId: string): void {
+        if (responseInput && currentRequestId && currentRequestId !== requestId) {
+            draftResponses.set(currentRequestId, responseInput.value);
+        }
+
         currentRequestId = requestId;
 
         // Set header title
@@ -788,7 +800,7 @@ import { truncate } from './utils';
         }
 
         if (responseInput) {
-            responseInput.value = '';
+            responseInput.value = draftResponses.get(requestId) || '';
             // Initialize textarea height
             autoResizeTextarea();
         }
@@ -1408,6 +1420,7 @@ import { truncate } from './utils';
                 requestId: currentRequestId,
                 attachments: currentAttachments
             });
+            draftResponses.delete(currentRequestId);
         }
 
         currentAttachments = [];
@@ -1423,6 +1436,7 @@ import { truncate } from './utils';
                 type: 'cancel',
                 requestId: currentRequestId
             });
+            draftResponses.delete(currentRequestId);
         }
 
         currentAttachments = [];
@@ -1799,6 +1813,10 @@ import { truncate } from './utils';
 
         // Auto-resize textarea
         autoResizeTextarea();
+
+        if (currentRequestId) {
+            draftResponses.set(currentRequestId, value);
+        }
 
         // Sync attachments with text - remove any attachments whose #filename is no longer in text
         syncAttachmentsWithText(value);
