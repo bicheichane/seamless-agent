@@ -384,6 +384,8 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 break;
             case 'deleteInteraction': this._handleDeleteInteraction(message.interactionId);
                 break;
+            case 'deleteMultipleInteractions': this._handleDeleteMultipleInteractions(message.interactionIds);
+                break;
             case 'cancelPendingRequest': {
                 this.cancelPendingRequest(message.requestId);
                 break;
@@ -1163,6 +1165,28 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
     }
 
     /**
+     * Handle deleting multiple interactions (batch delete with confirmation)
+     */
+    private async _handleDeleteMultipleInteractions(interactionIds: string[]): Promise<void> {
+        if (!interactionIds || interactionIds.length === 0) return;
+
+        const count = interactionIds.length;
+        const message = (strings.confirmDeleteSelected || 'Are you sure you want to delete {0} selected items?')
+            .replace('{0}', String(count));
+
+        const confirmation = await vscode.window.showWarningMessage(
+            message,
+            { modal: true },
+            strings.delete || 'Delete'
+        );
+
+        if (confirmation) {
+            this._chatHistoryStorage.deleteMultipleInteractions(interactionIds);
+            this._showHome();
+        }
+    }
+
+    /**
      * Handle opening a plan review in the full PlanReviewPanel
      * For pending reviews, uses reopenPendingReview to connect to the waiting agent
      * For historical reviews, opens in read-only mode
@@ -1270,6 +1294,13 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             '{{historyFilterAll}}': strings.historyFilterAll,
             '{{historyFilterAskUser}}': strings.historyFilterAskUser,
             '{{historyFilterPlanReview}}': strings.historyFilterPlanReview,
+            // Batch selection
+            '{{batchSelectMode}}': strings.batchSelectMode,
+            '{{batchExitSelectMode}}': strings.batchExitSelectMode,
+            '{{batchSelectAll}}': strings.batchSelectAll,
+            '{{batchDeselectAll}}': strings.batchDeselectAll,
+            '{{batchDeleteSelected}}': strings.batchDeleteSelected,
+            '{{batchSelectedCount}}': strings.batchSelectedCount,
         };
 
         for (const [placeholder, value] of Object.entries(replacements)) {

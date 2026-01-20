@@ -196,6 +196,10 @@ export type FromWebviewMessage = | {
         interactionId: string
     }
     | {
+        type: 'deleteMultipleInteractions';
+        interactionIds: string[]
+    }
+    | {
         type: 'cancelPendingRequest';
         requestId: string
     };

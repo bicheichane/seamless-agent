@@ -148,6 +148,15 @@ export const strings = {
     get attachmentFolderDepthRecursive() { return localize('attachment.folderDepth.recursive'); },
     get pastedImage() { return localize('attachment.pastedImage'); },
 
+    // Batch selection
+    get batchSelectMode() { return localize('batch.selectMode'); },
+    get batchExitSelectMode() { return localize('batch.exitSelectMode'); },
+    get batchSelectAll() { return localize('batch.selectAll'); },
+    get batchDeselectAll() { return localize('batch.deselectAll'); },
+    get batchDeleteSelected() { return localize('batch.deleteSelected'); },
+    get batchSelectedCount() { return localize('batch.selectedCount'); },
+    get confirmDeleteSelected() { return localize('confirm.deleteSelected'); },
+
     // Errors
     get noSuchInteraction() { return localize('error.noSuchInteraction'); },
 };

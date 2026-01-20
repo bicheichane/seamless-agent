@@ -100,5 +100,12 @@
   "command.clearHistory.title": "Clear History",
   "status.closed": "Closed",
   "status.active": "Active",
-  "errors.noSuchInteraction": "Interaction not found."
+  "errors.noSuchInteraction": "Interaction not found.",
+  "batch.selectMode": "Select",
+  "batch.exitSelectMode": "Cancel",
+  "batch.selectAll": "Select All",
+  "batch.deselectAll": "Deselect All",
+  "batch.deleteSelected": "Delete Selected",
+  "batch.selectedCount": "{0} selected",
+  "confirm.deleteSelected": "Are you sure you want to delete {0} selected items?"
 }

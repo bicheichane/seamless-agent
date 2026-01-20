@@ -137,6 +137,14 @@ declare global {
             historyFilterAll: string;
             historyFilterAskUser: string;
             historyFilterPlanReview: string;
+            // Batch selection
+            batchSelectMode: string;
+            batchExitSelectMode: string;
+            batchSelectAll: string;
+            batchDeselectAll: string;
+            batchDeleteSelected: string;
+            batchSelectedCount: string;
+            confirmDeleteSelected: string;
         };
     }
 }
@@ -195,6 +203,18 @@ import { truncate } from './utils';
     // Tab content elements
     const contentPending = document.getElementById('content-pending');
     const contentHistory = document.getElementById('content-history');
+
+    // Batch selection elements
+    const batchSelectBtn = document.getElementById('batch-select-btn');
+    const batchActionsBar = document.getElementById('batch-actions-bar');
+    const batchSelectedCount = document.getElementById('batch-selected-count');
+    const batchSelectAllBtn = document.getElementById('batch-select-all-btn');
+    const batchDeleteBtn = document.getElementById('batch-delete-btn');
+    const batchCancelBtn = document.getElementById('batch-cancel-btn');
+
+    // Batch selection state
+    let batchSelectMode = false;
+    let selectedInteractionIds: Set<string> = new Set();
 
     // History filter state
     let currentHistoryFilter: string = 'all';
@@ -280,8 +300,8 @@ import { truncate } from './utils';
     function applyHistoryFilter(filter: string): void {
         currentHistoryFilter = filter;
 
-        // Update button active states
-        document.querySelectorAll('.filter-btn').forEach(btn => {
+        // Update button active states (only filter buttons, not batch select)
+        document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-filter') === filter);
         });
 
@@ -309,10 +329,130 @@ import { truncate } from './utils';
     }
 
     /**
+     * Toggle batch selection mode
+     */
+    function toggleBatchSelectMode(enable?: boolean): void {
+        batchSelectMode = enable !== undefined ? enable : !batchSelectMode;
+
+        if (batchSelectMode) {
+            batchActionsBar?.classList.remove('hidden');
+            historyList?.querySelectorAll('.history-item').forEach(item => {
+                item.classList.add('batch-mode');
+            });
+        } else {
+            batchActionsBar?.classList.add('hidden');
+            selectedInteractionIds.clear();
+            historyList?.querySelectorAll('.history-item').forEach(item => {
+                item.classList.remove('batch-mode', 'selected');
+            });
+        }
+
+        updateBatchSelectionUI();
+    }
+
+    /**
+     * Toggle selection of a single item
+     */
+    function toggleItemSelection(id: string, element: HTMLElement): void {
+        if (selectedInteractionIds.has(id)) {
+            selectedInteractionIds.delete(id);
+            element.classList.remove('selected');
+        } else {
+            selectedInteractionIds.add(id);
+            element.classList.add('selected');
+        }
+        updateBatchSelectionUI();
+    }
+
+    /**
+     * Select or deselect all visible items
+     */
+    function toggleSelectAll(): void {
+        const visibleItems = historyList?.querySelectorAll('.history-item:not([style*="display: none"])') || [];
+        const allSelected = Array.from(visibleItems).every(item => {
+            const id = item.getAttribute('data-id');
+            return id && selectedInteractionIds.has(id);
+        });
+
+        visibleItems.forEach(item => {
+            const id = item.getAttribute('data-id');
+            if (!id) return;
+
+            if (allSelected) {
+                selectedInteractionIds.delete(id);
+                item.classList.remove('selected');
+            } else {
+                selectedInteractionIds.add(id);
+                item.classList.add('selected');
+            }
+        });
+
+        updateBatchSelectionUI();
+    }
+
+    /**
+     * Update batch selection UI (count display, button states)
+     */
+    function updateBatchSelectionUI(): void {
+        const count = selectedInteractionIds.size;
+        const countText = window.__STRINGS__?.batchSelectedCount?.replace('{count}', count.toString()) || `${count} selected`;
+
+        if (batchSelectedCount) {
+            batchSelectedCount.textContent = countText;
+        }
+
+        if (batchDeleteBtn) {
+            (batchDeleteBtn as HTMLButtonElement).disabled = count === 0;
+        }
+
+        // Update select all button icon based on state
+        const visibleItems = historyList?.querySelectorAll('.history-item:not([style*="display: none"])') || [];
+        const allSelected = visibleItems.length > 0 && Array.from(visibleItems).every(item => {
+            const id = item.getAttribute('data-id');
+            return id && selectedInteractionIds.has(id);
+        });
+
+        if (batchSelectAllBtn) {
+            const icon = batchSelectAllBtn.querySelector('.codicon');
+            if (icon) {
+                icon.className = allSelected ? 'codicon codicon-close-all' : 'codicon codicon-check-all';
+            }
+            batchSelectAllBtn.title = allSelected
+                ? (window.__STRINGS__?.batchDeselectAll || 'Deselect all')
+                : (window.__STRINGS__?.batchSelectAll || 'Select all');
+        }
+    }
+
+    /**
+     * Delete selected items
+     */
+    function deleteSelectedItems(): void {
+        if (selectedInteractionIds.size === 0) return;
+
+        // Send to extension host - confirmation is handled there via VS Code modal
+        vscode.postMessage({
+            type: 'deleteMultipleInteractions',
+            interactionIds: Array.from(selectedInteractionIds)
+        });
+
+        toggleBatchSelectMode(false);
+    }
+
+    /**
+     * Initialize batch selection event handlers
+     */
+    function initBatchSelection(): void {
+        batchSelectBtn?.addEventListener('click', () => toggleBatchSelectMode());
+        batchSelectAllBtn?.addEventListener('click', () => toggleSelectAll());
+        batchDeleteBtn?.addEventListener('click', () => deleteSelectedItems());
+        batchCancelBtn?.addEventListener('click', () => toggleBatchSelectMode(false));
+    }
+
+    /**
  * Initialize history filter buttons
  */
     function initHistoryFilters(): void {
-        document.querySelectorAll('.filter-btn').forEach(btn => {
+        document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
             btn.addEventListener('click', () => {
                 const filter = btn.getAttribute('data-filter') || 'all';
                 applyHistoryFilter(filter);
@@ -405,6 +545,31 @@ import { truncate } from './utils';
                 return;
             }
 
+            // View button (magnifier) - opens item even in batch mode
+            const viewBtn = target.closest('.history-item-view') as HTMLElement | null;
+
+            if (viewBtn) {
+                e.stopPropagation();
+                const item = viewBtn.closest('.history-item') as HTMLElement | null;
+                if (!item) return;
+
+                const id = item.getAttribute('data-id');
+                const type = item.getAttribute('data-type');
+                if (!id) return;
+
+                if (type === 'plan_review') {
+                    vscode.postMessage({
+                        type: 'openPlanReviewPanel', interactionId: id
+                    });
+                } else {
+                    vscode.postMessage({
+                        type: 'selectInteraction', interactionId: id
+                    });
+                }
+
+                return;
+            }
+
             const item = target.closest('.history-item') as HTMLElement | null;
             if (!item) return;
 
@@ -412,6 +577,13 @@ import { truncate } from './utils';
             const type = item.getAttribute('data-type');
             if (!id) return;
 
+            // In batch mode, clicking the item toggles selection
+            if (batchSelectMode) {
+                toggleItemSelection(id, item);
+                return;
+            }
+
+            // Normal mode: open the item
             if (type === 'plan_review') {
                 vscode.postMessage({
                     type: 'openPlanReviewPanel', interactionId: id
@@ -939,10 +1111,19 @@ import { truncate } from './utils';
             const icon = isPlanReview ? 'file-text' : 'comment';
             const statusClass = entry.status || 'pending';
 
+            const itemClasses = batchSelectMode ? 'history-item batch-mode' : 'history-item';
             const item = el('div', {
-                className: 'history-item',
+                className: itemClasses,
                 attrs: { 'data-id': entry.id, 'data-type': entry.type, tabindex: '0' }
             });
+
+            // View button (magnifier) - visible on hover or in batch mode
+            const viewBtn = el('button', {
+                className: 'history-item-view',
+                title: window.__STRINGS__?.openInPanel || 'View',
+                attrs: { type: 'button' }
+            }, codicon('search'));
+            item.appendChild(viewBtn);
 
             const header = el('div', { className: 'history-item-header' });
             const title = el('span', { className: 'history-item-title', text: entry.title });
@@ -2010,6 +2191,9 @@ import { truncate } from './utils';
 
     // Initialize history filters
     initHistoryFilters();
+
+    // Initialize batch selection handlers
+    initBatchSelection();
 
     // Initialize in-webview toolbar (top buttons)
     initHomeToolbar();

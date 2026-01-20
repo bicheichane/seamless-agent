@@ -150,6 +150,15 @@ export class ChatHistoryStorage {
     }
 
     /**
+     * Delete multiple interactions at once
+     */
+    deleteMultipleInteractions(interactionIds: string[]): void {
+        const idsToDelete = new Set(interactionIds);
+        const interactions = this.getAllInteractions().filter(i => !idsToDelete.has(i.id));
+        this.storage.update(STORAGE_KEYS.INTERACTIONS, interactions);
+    }
+
+    /**
      * Clear all completed interactions (preserves pending items)
      * Pending items can only be removed via the cancel command
      */

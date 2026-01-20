@@ -100,5 +100,12 @@
   "command.clearHistory.title": "Limpar Histórico",
   "status.closed": "Fechado",
   "status.active": "Ativo",
-  "errors.noSuchInteraction": "Interação não encontrada."
+  "errors.noSuchInteraction": "Interação não encontrada.",
+  "batch.selectMode": "Selecionar",
+  "batch.exitSelectMode": "Cancelar",
+  "batch.selectAll": "Selecionar Tudo",
+  "batch.deselectAll": "Desmarcar Tudo",
+  "batch.deleteSelected": "Excluir Selecionados",
+  "batch.selectedCount": "{0} selecionados",
+  "confirm.deleteSelected": "Tem certeza que deseja excluir {0} itens selecionados?"
 }

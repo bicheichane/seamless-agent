@@ -117,6 +117,30 @@
               >
                 <span class="codicon codicon-file-text"></span>
               </button>
+              <div class="filter-bar-spacer"></div>
+              <button
+                id="batch-select-btn"
+                class="filter-btn"
+                title="{{batchSelectMode}}"
+                aria-label="{{batchSelectMode}}"
+              >
+                <span class="codicon codicon-checklist"></span>
+              </button>
+            </div>
+            <!-- Batch Actions Bar (hidden by default) -->
+            <div id="batch-actions-bar" class="batch-actions-bar hidden">
+              <span id="batch-selected-count" class="batch-selected-count"></span>
+              <div class="batch-actions-buttons">
+                <button id="batch-select-all-btn" class="batch-action-btn" title="{{batchSelectAll}}">
+                  <span class="codicon codicon-check-all"></span>
+                </button>
+                <button id="batch-delete-btn" class="batch-action-btn danger" title="{{batchDeleteSelected}}" disabled>
+                  <span class="codicon codicon-trash"></span>
+                </button>
+                <button id="batch-cancel-btn" class="batch-action-btn" title="{{batchExitSelectMode}}">
+                  <span class="codicon codicon-close"></span>
+                </button>
+              </div>
             </div>
             <div id="history-list">
               <p class="placeholder">{{noChats}}</p>
