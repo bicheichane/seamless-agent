@@ -235,6 +235,8 @@ body {
     flex-shrink: 0;
     margin-top: 12px;
     padding: 0;
+    border: none;
+    min-inline-size: 0;
 }
 
 /* Step navigator (wizard-style multi-group) */

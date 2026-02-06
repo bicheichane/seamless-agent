@@ -812,6 +812,7 @@ import { truncate } from './utils';
         // Reset selection state
         selectedOptionsMap.clear();
         groupMultiSelectMap.clear();
+        currentStepIndex = 0;
 
         // Set header title
         if (headerTitle) {
@@ -863,10 +864,24 @@ import { truncate } from './utils';
     }
 
     /**
-     * Check if the options array contains option groups (objects with 'title' and 'options' fields)
+     * Check if a value looks like an option group (has 'title' and 'options' fields)
+     */
+    function isOptionGroupLike(value: any): boolean {
+        return typeof value === 'object'
+            && value !== null
+            && 'title' in value
+            && 'options' in value
+            && Array.isArray(value.options);
+    }
+
+    /**
+     * Check if the options array contains option groups.
+     * Validates all elements to avoid incorrect parsing of heterogeneous arrays.
      */
     function isOptionGroupArray(options: any[]): boolean {
-        return options.length > 0 && typeof options[0] === 'object' && options[0] !== null && 'title' in options[0] && 'options' in options[0];
+        if (options.length === 0) return false;
+        if (!isOptionGroupLike(options[0])) return false;
+        return options.every(isOptionGroupLike);
     }
 
     /**
@@ -876,17 +891,21 @@ import { truncate } from './utils';
         if (isOptionGroupArray(options)) {
             return options.map((g: any) => ({
                 title: String(g.title || ''),
-                options: (Array.isArray(g.options) ? g.options : []).map((o: any) =>
-                    typeof o === 'string' ? { label: o } : { label: String(o.label || ''), description: o.description ? String(o.description) : undefined }
-                ),
+                options: (Array.isArray(g.options) ? g.options : [])
+                    .map((o: any) =>
+                        typeof o === 'string' ? { label: o } : { label: String(o.label || ''), description: o.description ? String(o.description) : undefined }
+                    )
+                    .filter((o: NormalizedOptionItem) => o.label.trim().length > 0),
                 multiSelect: Boolean(g.multiSelect)
             }));
         } else {
             return [{
                 title: '',
-                options: options.map((o: any) =>
-                    typeof o === 'string' ? { label: o } : { label: String(o.label || ''), description: o.description ? String(o.description) : undefined }
-                ),
+                options: options
+                    .map((o: any) =>
+                        typeof o === 'string' ? { label: o } : { label: String(o.label || ''), description: o.description ? String(o.description) : undefined }
+                    )
+                    .filter((o: NormalizedOptionItem) => o.label.trim().length > 0),
                 multiSelect: false
             }];
         }
@@ -957,7 +976,7 @@ import { truncate } from './utils';
             const isSelected = selected.has(opt.label);
             const btn = el('button', {
                 className: 'option-btn' + (isSelected ? ' selected' : ''),
-                attrs: { type: 'button', title: opt.label }
+                attrs: { type: 'button', title: opt.label, 'aria-pressed': String(isSelected) }
             }, ...btnChildren);
 
             btn.addEventListener('click', () => {
@@ -1030,6 +1049,14 @@ import { truncate } from './utils';
                 renderCurrentStep();
             });
 
+            // Keyboard support: activate on Enter or Space when focused
+            itemEl.addEventListener('keydown', (event: KeyboardEvent) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    itemEl.click();
+                }
+            });
+
             summaryItems.push(itemEl);
         }
 
@@ -1077,14 +1104,19 @@ import { truncate } from './utils';
             // Deselect
             selected.delete(label);
             btn.classList.remove('selected');
+            btn.setAttribute('aria-pressed', 'false');
         } else {
             if (!multiSelect) {
                 // Single select: deselect all others in this group
                 selected.clear();
-                container.querySelectorAll('.option-btn.selected').forEach(b => b.classList.remove('selected'));
+                container.querySelectorAll('.option-btn.selected').forEach(b => {
+                    b.classList.remove('selected');
+                    b.setAttribute('aria-pressed', 'false');
+                });
             }
             selected.add(label);
             btn.classList.add('selected');
+            btn.setAttribute('aria-pressed', 'true');
         }
 
         selectedOptionsMap.set(groupTitle, selected);
@@ -1725,6 +1757,8 @@ import { truncate } from './utils';
         // Reset selection state
         selectedOptionsMap.clear();
         groupMultiSelectMap.clear();
+        normalizedGroups = [];
+        currentStepIndex = 0;
 
         currentAttachments = [];
         // Don't show home - the extension will send showCurrentSession or showSessionDetail

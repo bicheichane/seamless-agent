@@ -169,7 +169,7 @@
         </div>
 
         <!-- Options buttons (shown when options are provided) -->
-        <div id="options-container" class="options-container hidden">
+        <fieldset id="options-container" class="options-container hidden" aria-label="Answer options">
           <!-- Step navigator (shown for multi-group options) -->
           <div id="options-stepper" class="options-stepper hidden">
             <button id="step-prev-btn" class="step-nav-btn" type="button" title="Previous" aria-label="Previous step">
@@ -183,11 +183,11 @@
           <!-- Selection summary (shows selections from other steps) -->
           <div id="options-summary" class="options-summary hidden"></div>
           <!-- Current group options -->
-          <div id="options-buttons" class="options-buttons"></div>
+          <div id="options-buttons" class="options-buttons" aria-label="Options"></div>
           <div class="options-separator">
             <span class="options-separator-text">{{orTypeYourOwn}}</span>
           </div>
-        </div>
+        </fieldset>
 
         <div class="response-section">
           <label class="response-label" for="response-input"
