@@ -212,9 +212,31 @@ export function registerNativeTools(context: vscode.ExtensionContext, provider: 
             );
 
             // Return result to the AI
-            return new vscode.LanguageModelToolResult([
+            const toolResult = new vscode.LanguageModelToolResult([
                 new vscode.LanguageModelTextPart(JSON.stringify(result))
             ]);
+
+            // Attach renderer data for Chat Output Renderer (rich inline card)
+            try {
+                const { content: planContent, truncated } = truncatePlan(params.plan);
+                const rendererData: PlanReviewRendererData = {
+                    title: params.title || 'Plan Review',
+                    status: result.status,
+                    mode: 'review',
+                    plan: planContent,
+                    timestamp: Date.now(),
+                    requiredRevisions: result.requiredRevisions || [],
+                    reviewId: result.reviewId
+                };
+                (toolResult as vscode.ExtendedLanguageModelToolResult2).toolResultDetails2 = {
+                    mime: PLAN_REVIEW_RESULT_MIME,
+                    value: encodeRendererData(rendererData)
+                };
+            } catch (e) {
+                console.warn('Failed to attach renderer data to plan_review result:', e);
+            }
+
+            return toolResult;
         }
     });
 
