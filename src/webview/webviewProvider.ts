@@ -140,6 +140,19 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                     value: askUserOptionsLayout,
                 } as ToWebviewMessage);
             }
+
+            if (event.affectsConfiguration('seamless-agent.askUserOptionsTooltip')) {
+                const config = vscode.workspace.getConfiguration('seamless-agent');
+                const rawTooltip = config.get<string>('askUserOptionsTooltip', 'native');
+                const askUserOptionsTooltip = ['native', 'custom'].includes(rawTooltip)
+                    ? rawTooltip
+                    : 'native';
+                webviewView.webview.postMessage({
+                    type: 'updateConfig',
+                    key: 'askUserOptionsTooltip',
+                    value: askUserOptionsTooltip,
+                } as ToWebviewMessage);
+            }
         }, undefined, []);
 
         // Always show home view first (which includes pending requests and recent sessions)
@@ -160,11 +173,54 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
         // If the view isn't available, try to open it
         if (!this._view) {
             try {
-                // Focus the view to trigger resolution
+                // Save current focus context before triggering view resolution
+                const activeEditor = vscode.window.activeTextEditor;
+                const activeTerminal = vscode.window.activeTerminal;
+
+                // Focus the view to trigger lazy resolution (only way to initialize an unresolved WebviewView)
                 await vscode.commands.executeCommand('seamlessAgentView.focus');
 
                 // Wait a bit for the view to initialize
                 await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Best effort focus restoration:
+                // 1) If user likely had terminal focus (no active text editor + active terminal), restore terminal.
+                // 2) If user had an active text editor, restore editor.
+                // 3) Otherwise try Copilot Chat input.
+                // 4) Last resort: focus editor group.
+                let focusRestored = false;
+
+                if (!activeEditor && activeTerminal) {
+                    try {
+                        await vscode.commands.executeCommand('workbench.action.terminal.focus');
+                        focusRestored = true;
+                    } catch {
+                        // Ignore and continue to next fallback.
+                    }
+                }
+
+                if (!focusRestored && activeEditor) {
+                    await vscode.window.showTextDocument(activeEditor.document, {
+                        preview: false,
+                        preserveFocus: false,
+                        viewColumn: activeEditor.viewColumn,
+                    });
+                    focusRestored = true;
+                }
+
+                try {
+                    if (!focusRestored) {
+                        await vscode.commands.executeCommand('workbench.action.chat.focusInput');
+                        focusRestored = true;
+                    }
+                } catch {
+                    // Command may not exist depending on VS Code/Copilot version.
+                }
+
+                // Last fallback to avoid ending up with no obvious focus target.
+                if (!focusRestored) {
+                    await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
+                }
 
                 // If still not available after focusing, return error
                 if (!this._view) {
@@ -205,6 +261,11 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             // Update badge count
             this._setBadge(this._pendingRequests.size);
 
+            // NOTE: Do NOT call this._view?.show() here — even with preserveFocus: true,
+            // it causes VS Code to activate the sidebar, stealing focus from the user's
+            // active input (e.g. Copilot Chat). The notification below handles alerting
+            // the user when the panel isn't visible. (issue #94)
+
             // Keep current view only when selected request is still valid
             if (this._selectedRequestId && this._pendingRequests.has(this._selectedRequestId)) {
                 // Get the currently selected request and refresh it with updated pending count
@@ -222,10 +283,6 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
                 // No request currently being viewed and there are multiple - show list
                 this._showList();
             }
-
-            // Reveal the panel to get user's attention
-            // Disable automatic reveal to avoid disrupting user
-            // this._view?.show(true);
 
             // Show notification only if panel is not already visible
             if (!this._view?.visible) {
@@ -1405,6 +1462,10 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
         const askUserOptionsLayout = ['expanded', 'compact'].includes(rawAskUserOptionsLayout)
             ? rawAskUserOptionsLayout
             : 'compact';
+        const rawAskUserOptionsTooltip = config.get<string>('askUserOptionsTooltip', 'native');
+        const askUserOptionsTooltip = ['native', 'custom'].includes(rawAskUserOptionsTooltip)
+            ? rawAskUserOptionsTooltip
+            : 'native';
         const enableToolDebug = config.get<boolean>('enableToolDebug', false);
 
         // Replace placeholders
@@ -1480,6 +1541,7 @@ export class AgentInteractionProvider implements vscode.WebviewViewProvider {
             '{{batchSelectedCount}}': strings.batchSelectedCount,
             '{{historyTimeDisplay}}': historyTimeDisplay,
             '{{askUserOptionsLayout}}': askUserOptionsLayout,
+            '{{askUserOptionsTooltip}}': askUserOptionsTooltip,
             '{{orTypeYourOwn}}': strings.orTypeYourOwn,
             // Settings button
             '{{settings}}': strings.settings,
